@@ -167,7 +167,7 @@ public class SmartAjaxElementLocator extends SmartElementLocator {
 			} catch (NoSuchElementException e) {
 				lastException = e;
 				// Should use JUnit's AssertionError, but it may not be present
-				throw new NoSuchElementError("Unable to locate the element", e);
+				throw new NoSuchElementError("Unable to locate the element: " + e.getMessage(), e);
 			}
 		}
 
