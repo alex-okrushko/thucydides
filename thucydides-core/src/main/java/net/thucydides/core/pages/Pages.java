@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
@@ -97,6 +96,7 @@ public class Pages implements Serializable {
         } else {
             T pageCandidate = getCurrentPageOfType(pageObjectClass);
             pageCandidate.setDefaultBaseUrl(getDefaultBaseUrl());
+            pageCandidate.addJQuerySupport();
             cacheCurrentPage(pageCandidate);
             nextPage = pageCandidate;
         }

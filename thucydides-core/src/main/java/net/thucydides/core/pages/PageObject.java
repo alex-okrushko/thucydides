@@ -778,6 +778,7 @@ public abstract class PageObject {
                 jQueryEnabledPage.injectJQuery();
                 jQueryEnabledPage.injectJQueryPlugins();
             }
+            jQueryEnabledPage.injectJavaScriptUtils();
             jquerySupportActivated = true;
         }
     }
