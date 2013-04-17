@@ -1,5 +1,6 @@
 package net.thucydides.core.pages;
 
+import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -219,5 +220,14 @@ public interface WebElementFacade extends WebElement, WrapsElement, Locatable{
 	public abstract void clear();
 
 	public abstract String toString();
+	
+	/**
+	 * Returns the constructor that has Element Locator as one of the parameters 
+	 * 
+	 * This is needed when elements that extend WebElementFacade do not implement
+	 * Constructor that takes Element Locator as one of the constructor, however 
+	 * use the method calls that require one (e.g. {@code isVisible()}) 
+	 */
+	public Constructor<? extends WebElementFacade> getConstructorWithLocator();
 
 }

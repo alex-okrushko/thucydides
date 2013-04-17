@@ -43,25 +43,27 @@ public abstract class SmartBy extends By{
 
         @Override 
         public WebElement findElement(SearchContext context) {
-        		WebElement element;
-        		try{
-                	 element = (new WebDriverWait((WebDriver)context, 1))
-                			.until(new ExpectedCondition<WebElement>() {
-                				public WebElement apply(WebDriver driver){
-                					try{
-	                					return (WebElement) ((JavascriptExecutor)driver)
-	                							.executeScript("return AutoTest.getElement(arguments[0]);", scLocator);
-                					} catch (WebDriverException e) {
-                						return null;
-                					}
-                				}
-							});
-        		} catch (TimeoutException e){        			
-        			throw new NoSuchElementException("Cannot locate an element using "
-        			          + toString());
-        			
-        		}
-                return element;
+        	return (WebElement) ((JavascriptExecutor)(WebDriver)context)
+			.executeScript("return AutoTest.getElement(arguments[0]);", scLocator);
+//        		WebElement element;
+//        		try{
+//                	 element = (new WebDriverWait((WebDriver)context, 1))
+//                			.until(new ExpectedCondition<WebElement>() {
+//                				public WebElement apply(WebDriver driver){
+//                					try{
+//	                					return (WebElement) ((JavascriptExecutor)driver)
+//	                							.executeScript("return AutoTest.getElement(arguments[0]);", scLocator);
+//                					} catch (WebDriverException e) {
+//                						return null;
+//                					}
+//                				}
+//							});
+//        		} catch (TimeoutException e){        			
+//        			throw new NoSuchElementException("Cannot locate an element using "
+//        			          + toString());
+//        			
+//        		}
+//                return element;
         } 
 
 	    @Override

@@ -83,12 +83,12 @@ public class SmartAjaxElementLocator extends SmartElementLocator {
 	public WebElement findElementImmediately() {
 		SmartAnnotations annotations = new SmartAnnotations(field);
 		By by = annotations.buildBy();
-		List<WebElement> matchingElements = driver.findElements(by);
-		if (matchingElements.isEmpty()) {
-			throw new NoSuchElementException("No such element found for criteria " + by.toString());
-		} else {
-			return matchingElements.get(0);
-		}
+		return driver.findElement(by);
+//		if (matchingElements.isEmpty()) {
+//			throw new NoSuchElementException("No such element found for criteria " + by.toString());
+//		} else {
+//			return matchingElements.get(0);
+//		}
 	}
 
 	protected boolean isElementUsable(WebElement element) {

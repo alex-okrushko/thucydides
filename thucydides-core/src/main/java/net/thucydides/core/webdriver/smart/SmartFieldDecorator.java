@@ -82,7 +82,7 @@ public class SmartFieldDecorator implements FieldDecorator {
 
     /* Generate a type-parameterized locator proxy for the element in question. */
     @SuppressWarnings("unchecked")
-	protected <T> T proxyForLocator(ClassLoader loader, Class<T> interfaceType, ElementLocator locator) {
+	protected <T> T proxyForLocator(ClassLoader loader, @SuppressWarnings("rawtypes") Class interfaceType, ElementLocator locator) {
     	InvocationHandler handler;
     	T proxy = null;
     	if (WebElementFacade.class.isAssignableFrom(interfaceType)){

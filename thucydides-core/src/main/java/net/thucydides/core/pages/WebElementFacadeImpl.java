@@ -39,6 +39,7 @@ import org.openqa.selenium.support.ui.Wait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,7 +67,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
     private ElementLocator locator;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WebElementFacadeImpl.class);
-
+        
     public WebElementFacadeImpl(final WebDriver driver,
                             final WebElement webElement,
                             final long timeoutInMilliseconds) {
@@ -123,9 +124,9 @@ public class WebElementFacadeImpl implements WebElementFacade {
         logIfVerbose("findBy " + xpathOrCssSelector);
         WebElement nestedElement;
         if (PageObject.isXPath(xpathOrCssSelector)) {
-            nestedElement = webElement.findElement((By.xpath(xpathOrCssSelector)));
+            nestedElement = getElement().findElement((By.xpath(xpathOrCssSelector)));
         } else {
-            nestedElement = webElement.findElement((By.cssSelector(xpathOrCssSelector)));
+            nestedElement = getElement().findElement((By.cssSelector(xpathOrCssSelector)));
         }
         return new  WebElementFacadeImpl(driver, nestedElement, timeoutInMilliseconds);
     }
@@ -135,9 +136,9 @@ public class WebElementFacadeImpl implements WebElementFacade {
         logIfVerbose("findAll " + xpathOrCssSelector);
         List<WebElement> nestedElements = Lists.newArrayList();
         if (PageObject.isXPath(xpathOrCssSelector)) {
-            nestedElements = webElement.findElements((By.xpath(xpathOrCssSelector)));
+            nestedElements = getElement().findElements((By.xpath(xpathOrCssSelector)));
         } else {
-            nestedElements = webElement.findElements((By.cssSelector(xpathOrCssSelector)));
+            nestedElements = getElement().findElements((By.cssSelector(xpathOrCssSelector)));
         }
 
         return webElementFacadesFrom(nestedElements);
@@ -154,7 +155,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
     @Override
 	public WebElementFacade findBy(By selector) {
         logIfVerbose("findBy " + selector);
-        WebElement nestedElement = webElement.findElement(selector);
+        WebElement nestedElement = getElement().findElement(selector);
         return new WebElementFacadeImpl(driver, nestedElement, timeoutInMilliseconds);
     }
 
@@ -170,13 +171,13 @@ public class WebElementFacadeImpl implements WebElementFacade {
 
     @Override
 	public String getAttribute(String name) {
-        return webElement.getAttribute(name);
+        return getElement().getAttribute(name);
     }
 
     @Override
 	public List<WebElementFacade> thenFindAll(By selector) {
         logIfVerbose("findAll " + selector);
-        List<WebElement> nestedElements = webElement.findElements(selector);
+        List<WebElement> nestedElements = getElement().findElements(selector);
         return webElementFacadesFrom(nestedElements);
     }
 
@@ -187,7 +188,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
 
     @Override
 	public WebElementFacade withTimeoutOf(int timeout, TimeUnit unit) {
-        return new WebElementFacadeImpl(driver, webElement,
+        return new WebElementFacadeImpl(driver, locator,
                 TimeUnit.MILLISECONDS.convert(timeout, unit));
     }
 
@@ -301,7 +302,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
 	public boolean hasFocus() {
         JavascriptExecutorFacade js = new JavascriptExecutorFacade(driver);
         WebElement activeElement = (WebElement) js.executeScript("return window.document.activeElement");
-        return webElement.equals(activeElement);
+        return getElement().equals(activeElement);
     }
 
     /**
@@ -309,7 +310,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
      */
     @Override
 	public boolean containsText(final String value) {
-        return ((webElement != null) && (webElement.getText().contains(value)));
+        return ((getElement() != null) && (getElement().getText().contains(value)));
     }
 
     /**
@@ -317,7 +318,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
      */
     @Override
 	public boolean containsOnlyText(final String value) {
-        return ((webElement != null) && (webElement.getText().equals(value)));
+        return ((getElement() != null) && (getElement().getText().equals(value)));
     }
 
     /**
@@ -331,8 +332,8 @@ public class WebElementFacadeImpl implements WebElementFacade {
     @Override
 	public List<String> getSelectOptions() {
         List<WebElement> results = Collections.emptyList();
-        if (webElement != null) {
-            results = webElement.findElements(By.tagName("option"));
+        if (getElement() != null) {
+            results = getElement().findElements(By.tagName("option"));
         }
         return convert(results, new ExtractText());
     }
@@ -352,7 +353,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
 	public void shouldContainText(String textValue) {
         if (!containsText(textValue)) {
             String errorMessage = String.format(
-                    "The text '%s' was not found in the web element. Element text '%s'.", textValue, webElement.getText());
+                    "The text '%s' was not found in the web element. Element text '%s'.", textValue, getElement().getText());
             throw new AssertionError(errorMessage);
         }
     }
@@ -366,7 +367,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
 	public void shouldContainOnlyText(String textValue) {
         if (!containsOnlyText(textValue)) {
             String errorMessage = String.format(
-                    "The text '%s' does not match the elements text '%s'.", textValue, webElement.getText());
+                    "The text '%s' does not match the elements text '%s'.", textValue, getElement().getText());
             throw new AssertionError(errorMessage);
         }
     }
@@ -389,7 +390,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
 	public void shouldNotContainText(String textValue) {
         if (containsText(textValue)) {
             String errorMessage = String.format(
-                    "The text '%s' was found in the web element when it should not have. Element text '%s'.", textValue, webElement.getText());
+                    "The text '%s' was found in the web element when it should not have. Element text '%s'.", textValue, getElement().getText());
             throw new AssertionError(errorMessage);
         }
     }
@@ -398,21 +399,21 @@ public class WebElementFacadeImpl implements WebElementFacade {
 	public void shouldBeEnabled() {
         if (!isEnabled()) {
             String errorMessage = String.format(
-                    "Field '%s' should be enabled", webElement);
+                    "Field '%s' should be enabled", getElement());
             throw new AssertionError(errorMessage);
         }
     }
 
     @Override
 	public boolean isEnabled() {
-        return (webElement != null) && (webElement.isEnabled());
+        return (getElement() != null) && (getElement().isEnabled());
     }
 
     @Override
 	public void shouldNotBeEnabled() {
         if (isEnabled()) {
             String errorMessage = String.format(
-                    "Field '%s' should not be enabled", webElement);
+                    "Field '%s' should not be enabled", getElement());
             throw new AssertionError(errorMessage);
         }
     }
@@ -428,7 +429,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
         enableHighlightingIfRequired();
         waitUntilElementAvailable();
         clear();
-        webElement.sendKeys(value);
+        getElement().sendKeys(value);
         notifyScreenChange();
         return this;
     }
@@ -443,7 +444,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
         logIfVerbose("Type and enter '" + value + "'");
         waitUntilElementAvailable();
         clear();
-        webElement.sendKeys(value, Keys.ENTER);
+        getElement().sendKeys(value, Keys.ENTER);
         notifyScreenChange();
         return this;
     }
@@ -461,8 +462,8 @@ public class WebElementFacadeImpl implements WebElementFacade {
         waitUntilElementAvailable();
         clear();
 
-        webElement.sendKeys(value);
-        webElement.sendKeys(Keys.TAB);
+        getElement().sendKeys(value);
+        getElement().sendKeys(Keys.TAB);
 
         getClock().pauseFor(100);
         notifyScreenChange();
@@ -478,7 +479,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
 	public WebElementFacade selectByVisibleText(final String label) {
         logIfVerbose("Select label '" + label + "'");
         waitUntilElementAvailable();
-        Select select = new Select(webElement);
+        Select select = new Select(getElement());
         select.selectByVisibleText(label);
         notifyScreenChange();
         return this;
@@ -487,7 +488,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
     @Override
 	public String getSelectedVisibleTextValue() {
         waitUntilVisible();
-        Select select = new Select(webElement);
+        Select select = new Select(getElement());
         return select.getFirstSelectedOption().getText();
     }
 
@@ -496,7 +497,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
         logIfVerbose("Select value '" + value + "'");
         enableHighlightingIfRequired();
         waitUntilElementAvailable();
-        Select select = new Select(webElement);
+        Select select = new Select(getElement());
         select.selectByValue(value);
         notifyScreenChange();
         return this;
@@ -505,7 +506,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
     @Override
 	public String getSelectedValue() {
         waitUntilVisible();
-        Select select = new Select(webElement);
+        Select select = new Select(getElement());
         return select.getFirstSelectedOption().getAttribute("value");
     }
 
@@ -514,7 +515,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
         logIfVerbose("Select by index '" + indexValue + "'");
         enableHighlightingIfRequired();
         waitUntilElementAvailable();
-        Select select = new Select(webElement);
+        Select select = new Select(getElement());
         select.selectByIndex(indexValue);
         notifyScreenChange();
         return this;
@@ -632,7 +633,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
     private ExpectedCondition<Boolean> elementIsEnabled() {
         return new ExpectedCondition<Boolean>() {
             public Boolean apply(WebDriver driver) {
-                return ((webElement != null) && (!isDisabledField(webElement)));
+                return ((getElement() != null) && (!isDisabledField(getElement())));
             }
         };
     }
@@ -663,7 +664,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
     private ExpectedCondition<Boolean> elementIsNotEnabled() {
         return new ExpectedCondition<Boolean>() {
             public Boolean apply(WebDriver driver) {
-                return ((webElement != null) && (!webElement.isEnabled()));
+                return ((getElement() != null) && (!getElement().isEnabled()));
             }
         };
     }
@@ -693,19 +694,19 @@ public class WebElementFacadeImpl implements WebElementFacade {
     @Override
 	public String getValue() {
         waitUntilVisible();
-        return webElement.getAttribute("value");
+        return getElement().getAttribute("value");
     }
 
     @Override
 	public boolean isSelected() {
         waitUntilVisible();
-        return webElement.isSelected();
+        return getElement().isSelected();
     }
 
     @Override
 	public String getText() {
         waitUntilVisible();
-        return webElement.getText();
+        return getElement().getText();
     }
 
     @Override
@@ -744,12 +745,12 @@ public class WebElementFacadeImpl implements WebElementFacade {
             return "";
         }
 
-        if (valueAttributeSupportedAndDefinedIn(webElement)) {
+        if (valueAttributeSupportedAndDefinedIn(getElement())) {
             return getValue();
         }
 
-        if (!StringUtils.isEmpty(webElement.getText())) {
-            return webElement.getText();
+        if (!StringUtils.isEmpty(getElement().getText())) {
+            return getElement().getText();
         }
         return "";
     }
@@ -767,7 +768,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
         enableHighlightingIfRequired();
         waitUntilElementAvailable();
         logClick();
-        webElement.click();
+        getElement().click();
         notifyScreenChange();
     }
 
@@ -777,7 +778,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
 
     private void logIfVerbose(String logMessage) {
         if (useVerboseLogging()) {
-            LOGGER.info(humanizedTabfNameFor(webElement) + ":" + logMessage);
+            LOGGER.info(humanizedTabfNameFor(getElement()) + ":" + logMessage);
         }
     }
 
@@ -796,8 +797,8 @@ public class WebElementFacadeImpl implements WebElementFacade {
 
     @Override
 	public void clear() {
-        webElement.sendKeys(Keys.chord(Keys.CONTROL,"a"), Keys.DELETE);
-        webElement.clear();
+        getElement().sendKeys(Keys.chord(Keys.CONTROL,"a"), Keys.DELETE);
+        getElement().clear();
     }
 
     private void enableHighlightingIfRequired() {
@@ -812,8 +813,8 @@ public class WebElementFacadeImpl implements WebElementFacade {
 
 	@Override
     public String toString() {
-        if (webElement != null) {
-            return webElement.toString();
+        if (getElement() != null) {
+            return getElement().toString();
         } else {
             return "<Undefined web element>";
         }
@@ -825,56 +826,71 @@ public class WebElementFacadeImpl implements WebElementFacade {
 	 */
 	
 	public void submit() {
-		webElement.submit();
+		getElement().submit();
 	}
 
 	public void sendKeys(CharSequence... keysToSend) {
-		webElement.sendKeys(keysToSend);
+		getElement().sendKeys(keysToSend);
 	}
 
 	public String getTagName() {
-		return webElement.getTagName();
+		return getElement().getTagName();
 	}
 
 	public List<WebElement> findElements(By by) {
-		return webElement.findElements(by);
+		return getElement().findElements(by);
 	}
 
 	public WebElement findElement(By by) {
-		return webElement.findElement(by);
+		return getElement().findElement(by);
 	}
 
 	public boolean isDisplayed() {
-		return webElement.isDisplayed();
+		return getElement().isDisplayed();
 	}
 
 	public Point getLocation() {
-		return webElement.getLocation();
+		return getElement().getLocation();
 	}
 
 	public Dimension getSize() {
-		return webElement.getSize();
+		return getElement().getSize();
 	}
 
 	public String getCssValue(String propertyName) {
-		return webElement.getCssValue(propertyName);
+		return getElement().getCssValue(propertyName);
 	}
 
 	public WebElement getWrappedElement() {
-		return webElement;
+		return getElement();
 	}
 
 	@Override
 	public Coordinates getCoordinates() {
 		// TODO Auto-generated method stub
-		return  ((Locatable) webElement).getCoordinates();
+		return  ((Locatable) getElement()).getCoordinates();
 	}
 
 	@Override
 	@Deprecated
 	public Point getLocationOnScreenOnceScrolledIntoView() {
 		// TODO Auto-generated method stub
-		return ((Locatable) webElement).getLocationOnScreenOnceScrolledIntoView();
+		return ((Locatable) getElement()).getLocationOnScreenOnceScrolledIntoView();
+	}
+	
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public Constructor<? extends WebElementFacade> getConstructorWithLocator() {
+		Class<?> clazz = this.getClass();
+		
+		while(true){
+			try {
+				return (Constructor<? extends WebElementFacade>) clazz.getConstructor(WebDriver.class, ElementLocator.class, long.class);
+			} catch (NoSuchMethodException e){
+				clazz = clazz.getSuperclass();
+			}
+		}
 	}
 
 }
