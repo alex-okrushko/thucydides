@@ -1,17 +1,25 @@
 package net.thucydides.core.webdriver.javascript;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.Map;
+import java.util.List;
 
 import net.thucydides.core.annotations.TypeAdapters;
+import net.thucydides.core.pages.jquery.JQueryEnabledPage;
 import net.thucydides.core.webdriver.WebDriverFacade;
 
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.TypeFactory;
+//import com.google.gson.Gson;
+//import com.google.gson.GsonBuilder;
+//import com.google.gson.reflect.TypeToken;
 
 import static net.thucydides.core.webdriver.javascript.JavascriptSupport.javascriptIsSupportedIn;
 
@@ -20,10 +28,15 @@ import static net.thucydides.core.webdriver.javascript.JavascriptSupport.javascr
  */
 public class JavascriptExecutorFacade {
     private WebDriver driver;
-    public GsonBuilder gsonBuilder;
+    private ObjectMapper mapper;
 
     public JavascriptExecutorFacade(final WebDriver driver) {
         this.driver = driver;
+    }
+    
+    public JavascriptExecutorFacade withObjectMapper(ObjectMapper mapper){
+    	this.mapper = mapper;
+    	return this;
     }
 
     /**
@@ -50,21 +63,25 @@ public class JavascriptExecutorFacade {
     }
     
     private String getStringifiedJavaScriptObject(final String script, final Object... params){
+    	JQueryEnabledPage jQueryEnabledPage = JQueryEnabledPage.withDriver(getRealDriver());
+        jQueryEnabledPage.injectJavaScriptUtils();
     	return (String)executeScript("return JSON.stringify(JSON.decycle(function(arguments){"+ script + "}(arguments)));", params);
     }
     
-    @SuppressWarnings("unchecked")
-	private Gson getGsonForClass(Class<?> clazz){
-    	GsonBuilder gsonBuilder = new GsonBuilder();
+    
+
+	private ObjectMapper getMapperForClass(Class<?> clazz){
+		if (mapper == null){
+			mapper = new ObjectMapper();
+		}
     	for (Field field : clazz.getDeclaredFields()){
     		if (field.isAnnotationPresent(TypeAdapters.class)){
-    			if (!Map.class.isAssignableFrom(field.getType())){
-    				throw new WebDriverException("TypeAdapters has to be of Map<Class, Object> type");
+    			if (!Module.class.isAssignableFrom(field.getType())){
+    				throw new WebDriverException("TypeAdapter has to be of Module type");
     			}
     			field.setAccessible(true);
-    			Map<Class<?>, Object> map;
     			try {
-					map = (Map<Class<?>, Object>) field.get(clazz.newInstance());
+    				mapper.registerModule((Module) field.get(clazz.newInstance()));
 				} catch (IllegalArgumentException e) {
 					throw new WebDriverException(e);
 				} catch (IllegalAccessException e) {
@@ -72,12 +89,9 @@ public class JavascriptExecutorFacade {
 				} catch (InstantiationException e) {
 					throw new WebDriverException(e);
 				}
-    			for (Map.Entry<Class<?>, Object> entry: map.entrySet()){
-    				gsonBuilder.registerTypeAdapter(entry.getKey(), entry.getValue());
-    			}
     		}
     	}
-    	return gsonBuilder.create();
+    	return mapper;
     }
     /**
      * Reflect JavaScript Object on the Java Class.
@@ -89,9 +103,39 @@ public class JavascriptExecutorFacade {
      */
     public <T> T executeScriptAndReflectOn(Class<T> classOfT, final String script, final Object... params){
     	String objString = getStringifiedJavaScriptObject(script, params);
-    	gsonBuilder = new GsonBuilder();
-    	Gson gson = getGsonForClass(classOfT);
-		return gson.fromJson(objString, classOfT);
+    	ObjectMapper mapper = getMapperForClass(classOfT);
+    	try {
+			return mapper.readValue(objString, classOfT);
+		} catch (JsonParseException e) {
+			throw new WebDriverException(e);
+		} catch (JsonMappingException e) {
+			throw new WebDriverException(e);
+		} catch (IOException e) {
+			throw new WebDriverException(e);
+		}
+    }
+    
+    /**
+     * Reflect JavaScript Objects on the List of Java Class.
+     * 
+     * @param classOfT Java Class to reflect on
+     * @param script Script the returns JavaScript Object
+     * @param params
+     * @return reflected List of Class
+     */
+    public <T> List<T> executeScriptAndReflectOnListOf(Class<T> classOfT, final String script, final Object... params){
+    	String objString = getStringifiedJavaScriptObject(script, params);
+    	
+    	ObjectMapper mapper = getMapperForClass(classOfT);
+    	try {
+			return mapper.readValue(objString, TypeFactory.defaultInstance().constructCollectionType(List.class, classOfT));
+		} catch (JsonParseException e) {
+			throw new WebDriverException(e);
+		} catch (JsonMappingException e) {
+			throw new WebDriverException(e);
+		} catch (IOException e) {
+			throw new WebDriverException(e);
+		}
     }
 
     private WebDriver getRealDriver() {
