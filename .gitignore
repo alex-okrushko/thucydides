@@ -18,6 +18,7 @@ out
 *.ignore      
 build
 thucydides-arquillian
+.hg*
 
 *.sublime-project
 *.sublime-workspace
