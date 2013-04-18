@@ -1,4 +1,4 @@
-package net.thucydides.easyb.samples;
+package net.thucydides.easyb.samples
 
 
 import net.thucydides.core.annotations.Step

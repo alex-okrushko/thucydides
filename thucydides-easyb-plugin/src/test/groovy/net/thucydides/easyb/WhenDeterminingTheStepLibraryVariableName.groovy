@@ -1,4 +1,4 @@
-package net.thucydides.easyb;
+package net.thucydides.easyb
 
 
 import net.thucydides.easyb.samples.BigSampleLibrary
