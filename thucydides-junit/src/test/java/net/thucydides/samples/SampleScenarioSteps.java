@@ -183,8 +183,17 @@ public class SampleScenarioSteps extends ScenarioSteps {
         this.address = address;
     }
 
-    @StepGroup
+    @Step
     public void data_driven_test_step() {
+        enter_name_and_age(name, age);
+        enter_address(address);
+        nestedSteps.stepThatSucceeds();
+        nestedSteps.anotherStepThatSucceeds();
+        nestedSteps.groupOfSteps();
+    }
+
+    @Step
+    public void simple_data_driven_test_step() {
         enter_name_and_age(name, age);
         enter_address(address);
     }
@@ -194,9 +203,8 @@ public class SampleScenarioSteps extends ScenarioSteps {
         assertThat(Integer.parseInt(age), is(lessThan(35)));
     }
 
-
+    @Step
     public void data_driven_test_step_that_breaks() {
-        LOGGER.info("Testing with data name=" +name +", age=" + age);
         if (Integer.parseInt(age) > 35) {
             throw new ElementNotVisibleException("A webdriver issue");
         }

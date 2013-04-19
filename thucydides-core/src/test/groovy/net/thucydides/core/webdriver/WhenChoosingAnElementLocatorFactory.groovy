@@ -5,7 +5,7 @@ import net.thucydides.core.util.MockEnvironmentVariables
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.support.pagefactory.AjaxElementLocatorFactory
 import org.openqa.selenium.support.pagefactory.DefaultElementLocatorFactory
-import net.thucydides.core.webdriver.smart.SmartElementLocatorFactory
+import net.thucydides.core.annotations.locators.SmartElementLocatorFactory
 import spock.lang.Specification
 import spock.lang.Unroll;
 
@@ -27,7 +27,9 @@ class WhenChoosingAnElementLocatorFactory extends Specification {
 	@Unroll
     def "should choose the #factoryName factory if requested"() {
         given:
-        	environmentVariables.setProperty("thucydides.locator.factory", factoryName)
+            if (factoryName) {
+        	    environmentVariables.setProperty("thucydides.locator.factory", factoryName)
+            }
             def configuration = new SystemPropertiesConfiguration(environmentVariables);
             def selectorFactory = new ElementLocatorFactorySelector(configuration);
         when:
@@ -35,8 +37,8 @@ class WhenChoosingAnElementLocatorFactory extends Specification {
         then:
             locator.class == locatorFactoryClass
 		where:
-			factoryName << ["DisplayedElementLocatorFactory", "AjaxElementLocatorFactory", "DefaultElementLocatorFactory"]
-			locatorFactoryClass << [DisplayedElementLocatorFactory, AjaxElementLocatorFactory, DefaultElementLocatorFactory]
+			factoryName << ["","SmartElementLocatorFactory","AjaxElementLocatorFactory", "DefaultElementLocatorFactory"]
+			locatorFactoryClass << [SmartElementLocatorFactory, SmartElementLocatorFactory, AjaxElementLocatorFactory, DefaultElementLocatorFactory]
     }
 
     def "should throw exception with meaningful error if an invalid factory class is specified"() {
@@ -45,7 +47,7 @@ class WhenChoosingAnElementLocatorFactory extends Specification {
             def configuration = new SystemPropertiesConfiguration(environmentVariables);
             def selectorFactory = new ElementLocatorFactorySelector(configuration);
         when:
-            def locator = selectorFactory.getLocatorFor(driver)
+            selectorFactory.getLocatorFor(driver)
         then:
             IllegalArgumentException e = thrown()
         and:

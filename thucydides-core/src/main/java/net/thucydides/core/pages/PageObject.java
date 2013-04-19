@@ -1,9 +1,6 @@
 package net.thucydides.core.pages;
 
-import ch.lambdaj.function.convert.Converter;
-import com.google.common.base.Predicate;
 import net.thucydides.core.annotations.WhenPageOpens;
-import net.thucydides.core.fluent.ThucydidesFluentAdapter;
 import net.thucydides.core.guice.Injectors;
 import net.thucydides.core.pages.components.Dropdown;
 import net.thucydides.core.pages.components.FileToUpload;
@@ -28,10 +25,8 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.Clock;
 import org.openqa.selenium.support.ui.ExpectedCondition;
-import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Sleeper;
 import org.openqa.selenium.support.ui.SystemClock;
-import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +40,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static ch.lambdaj.Lambda.convert;
 import static net.thucydides.core.webdriver.javascript.JavascriptSupport.javascriptIsSupportedIn;
 
 /**
@@ -68,8 +62,6 @@ public abstract class PageObject {
 
     private WebDriver driver;
 
-    private Pages pages;
-
     private MatchingPageExpressions matchingPageExpressions;
 
     private RenderedPageObjectView renderedView;
@@ -84,49 +76,41 @@ public abstract class PageObject {
 
     private boolean jquerySupportActivated = false;
 
-    protected PageObject(final WebDriver driver, Predicate<PageObject> callback) {
+    public PageObject(final WebDriver driver, final int ajaxTimeout) {
+        this.driver = driver;
+        this.waitForTimeoutInMilliseconds = ajaxTimeout;
         this.webdriverClock = new SystemClock();
         this.clock = Injectors.getInjector().getInstance(net.thucydides.core.pages.SystemClock.class);
         this.sleeper = Sleeper.SYSTEM_SLEEPER;
-        this.driver = driver;
         this.javascriptExecutorFacade = new JavascriptExecutorFacade(driver);
 
         setupPageUrls();
-        callback.apply(this); //need to handle return value
+
+        int ajaxTimeoutInSeconds = ajaxTimeoutInSecondsWithAtLeast1Second(ajaxTimeout);
+        WebDriverFactory.initElementsWithAjaxSupport(this, driver, ajaxTimeoutInSeconds);
+
     }
 
-    public PageObject(final WebDriver driver, final int ajaxTimeout) {
-        this(driver, new Predicate<PageObject>() {
-            protected int ajaxTimeoutInSecondsWithAtLeast1Second(int ajaxTimeout) {
-                if (ajaxTimeout > 1000) {
-                    return ajaxTimeout / 1000;
-                } else {
-                    return 1;
-                }
-            }
-            public boolean apply(PageObject page) {
-                page.waitForTimeoutInMilliseconds = ajaxTimeout;
-                int ajaxTimeoutInSeconds = ajaxTimeoutInSecondsWithAtLeast1Second(ajaxTimeout);
-                Injectors.getInjector().getInstance(WebDriverFactory.class).initElementsWithAjaxSupport(page, driver, ajaxTimeoutInSeconds);
-                return true;
-            }
-        });
+    protected int ajaxTimeoutInSecondsWithAtLeast1Second(int ajaxTimeout) {
+        if (ajaxTimeout > 1000) {
+            return ajaxTimeout / 1000;
+        } else {
+            return 1;
+        }
     }
 
     public PageObject(final WebDriver driver) {
-        this(driver, (int)WAIT_FOR_TIMEOUT);
-    }
+        this.driver = driver;
+        this.waitForTimeoutInMilliseconds = WAIT_FOR_TIMEOUT;
+        this.webdriverClock = new SystemClock();
+        this.clock = Injectors.getInjector().getInstance(net.thucydides.core.pages.SystemClock.class);
+        this.sleeper = Sleeper.SYSTEM_SLEEPER;
+        this.javascriptExecutorFacade = new JavascriptExecutorFacade(driver);
 
-    public void setPages(Pages pages) {
-        this.pages = pages;
-    }
+        setupPageUrls();
 
-    public <T extends PageObject> T switchToPage(final Class<T> pageObjectClass) {
-        if (pages.getDriver() == null) {
-            pages.setDriver(driver);
-        }
+        WebDriverFactory.initElementsWithAjaxSupport(this, driver);
 
-        return pages.getPage(pageObjectClass);
     }
 
     public FileToUpload upload(final String filename) {
@@ -215,7 +199,6 @@ public abstract class PageObject {
     }
 
     public PageObject waitForRenderedElementsToBePresent(final By byElementCriteria) {
-//        waitOnPage().until(ExpectedConditions.visibilityOfElementLocated(byElementCriteria));
         getRenderedView().waitForPresenceOf(byElementCriteria);
         return this;
     }
@@ -225,7 +208,8 @@ public abstract class PageObject {
     }
 
 
-    public PageObject waitForRenderedElementsToDisappear(final By byElementCriteria) {
+    public PageObject waitForRenderedElementsToDisappear(
+            final By byElementCriteria) {
         getRenderedView().waitForElementsToDisappear(byElementCriteria);
         return this;
     }
@@ -239,18 +223,12 @@ public abstract class PageObject {
      */
     public PageObject waitForTextToAppear(final String expectedText) {
         getRenderedView().waitForText(expectedText);
-//        waitOnPage().until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[contains(.,'" + StringEscapeUtils.escapeXml(expectedText) +"')]")));
         return this;
     }
 
     public PageObject waitForTitleToAppear(final String expectedTitle) {
-        waitOnPage().until(ExpectedConditions.titleIs(expectedTitle));
-        //getRenderedView().waitForTitle(expectedTitle);
+        getRenderedView().waitForTitle(expectedTitle);
         return this;
-    }
-
-    private WebDriverWait waitOnPage() {
-        return new WebDriverWait(driver, waitForTimeoutInSeconds());
     }
 
     public PageObject waitForTitleToDisappear(final String expectedTitle) {
@@ -294,7 +272,6 @@ public abstract class PageObject {
      */
     public PageObject waitForTextToDisappear(final String expectedText,
                                              final long timeout) {
-
         getRenderedView().waitForTextToDisappear(expectedText, timeout);
         return this;
     }
@@ -464,9 +441,8 @@ public abstract class PageObject {
     }
 
     public void shouldBeVisible(final By byCriteria) {
-        waitOnPage().until(ExpectedConditions.visibilityOfElementLocated(byCriteria));
-//        WebElement element = getDriver().findElement(byCriteria);
-//        shouldBeVisible(element);
+        WebElement element = getDriver().findElement(byCriteria);
+        shouldBeVisible(element);
     }
 
     public void shouldNotBeVisible(final WebElement field) {
@@ -478,24 +454,17 @@ public abstract class PageObject {
     }
 
     public void shouldNotBeVisible(final By byCriteria) {
-        List<WebElement> matchingElements = getDriver().findElements(byCriteria);
-        if (!matchingElements.isEmpty()) {
-            waitOnPage().until(ExpectedConditions.invisibilityOfElementLocated(byCriteria));
+        try {
+            WebElement element = getDriver().findElement(byCriteria);
+            shouldNotBeVisible(element);
+        } catch (NoSuchElementException e) {
+            // A non-existant element is not visible
         }
     }
 
-    private long waitForTimeoutInSeconds() {
-        return (waitForTimeoutInMilliseconds < 1000) ? 1 : (waitForTimeoutInMilliseconds/1000);
-    }
-
-    public long waitForTimeoutInMilliseconds() {
-        return waitForTimeoutInMilliseconds;
-    }
-
-
     public String updateUrlWithBaseUrlIfDefined(final String startingUrl) {
 
-        String baseUrl = pageUrls.getSystemBaseUrl();
+        String baseUrl = pageUrls.getBaseUrl();
         if ((baseUrl != null) && (!StringUtils.isEmpty(baseUrl))) {
             return replaceHost(startingUrl, baseUrl);
         } else {
@@ -506,6 +475,7 @@ public abstract class PageObject {
     private String replaceHost(final String starting, final String base) {
 
         String updatedUrl = starting;
+
         try {
             URL startingUrl = new URL(starting);
             URL baseUrl = new URL(base);
@@ -544,7 +514,7 @@ public abstract class PageObject {
         String startingUrl = pageUrls.getStartingUrl(parameterValues);
         LOGGER.debug("Opening page at url {}", startingUrl);
         openPageAtUrl(startingUrl);
-        initializePage();
+        callWhenPageOpensMethods();
         LOGGER.debug("Page opened");
     }
 
@@ -553,7 +523,7 @@ public abstract class PageObject {
         String startingUrl = pageUrls.getNamedUrl(urlTemplateName, parameterValues);
         LOGGER.debug("Opening page at url {}", startingUrl);
         openPageAtUrl(startingUrl);
-        initializePage();
+        callWhenPageOpensMethods();
         LOGGER.debug("Page opened");
     }
 
@@ -582,31 +552,7 @@ public abstract class PageObject {
     final public void open() {
         String startingUrl = updateUrlWithBaseUrlIfDefined(pageUrls.getStartingUrl());
         openPageAtUrl(startingUrl);
-        initializePage();
-    }
-
-    private void initializePage() {
-        checkUrlPatterns();
-        addJQuerySupport();
         callWhenPageOpensMethods();
-    }
-
-    private <T extends PageObject> void checkUrlPatterns() {
-        if (!matchesAnyUrl()) {
-            String currentUrl = getDriver().getCurrentUrl();
-            if (!compatibleWithUrl(currentUrl)) {
-                thisIsNotThePageYourLookingFor();
-            }
-        }
-    }
-
-    private void thisIsNotThePageYourLookingFor() {
-
-        String errorDetails = "This is not the page you're looking for:\n"
-                + "I was looking for a page compatible with " + this.getClass() + "\n"
-                + "I was at the URL " + getDriver().getCurrentUrl();
-
-        throw new WrongPageError(errorDetails);
     }
 
     final public void openAt(String startingUrl) {
@@ -693,15 +639,7 @@ public abstract class PageObject {
      * Provides a fluent API for querying web elements.
      */
     public WebElementFacade element(WebElement webElement) {
-        return new WebElementFacadeImpl(driver, webElement, waitForTimeoutInMilliseconds);
-    }
-
-    public WebElementFacade $(WebElement webElement) {
-        return element(webElement);
-    }
-
-    public WebElementFacade $(String xpathOrCssSelector) {
-        return element(xpathOrCssSelector);
+        return new WebElementFacade(driver, webElement, waitForTimeoutInMilliseconds);
     }
 
     /**
@@ -709,24 +647,11 @@ public abstract class PageObject {
      */
     public WebElementFacade element(By bySelector) {
         WebElement webElement = getDriver().findElement(bySelector);
-        return new WebElementFacadeImpl(driver, webElement, waitForTimeoutInMilliseconds);
+        return new WebElementFacade(driver, webElement, waitForTimeoutInMilliseconds);
     }
 
     public WebElementFacade find(By selector) {
         return element(selector);
-    }
-
-    public List<WebElementFacade> findAll(By bySelector) {
-        List<WebElement> matchingWebElements = driver.findElements(bySelector);
-        return convert(matchingWebElements, toWebElementFacades());
-    }
-
-    private Converter<WebElement, WebElementFacade> toWebElementFacades() {
-        return new Converter<WebElement, WebElementFacade>() {
-            public WebElementFacade convert(WebElement from) {
-                return element(from);
-            }
-        };
     }
 
     /**
@@ -778,7 +703,6 @@ public abstract class PageObject {
                 jQueryEnabledPage.injectJQuery();
                 jQueryEnabledPage.injectJQueryPlugins();
             }
-            jQueryEnabledPage.injectJavaScriptUtils();
             jquerySupportActivated = true;
         }
     }
@@ -835,22 +759,15 @@ public abstract class PageObject {
             element(field).type(value);
         }
 
-        public void into(final WebElementFacade field) {
-            field.type(value);
-        }
-
         public void intoField(final By bySelector) {
             WebElement field = getDriver().findElement(bySelector);
-            into(field);
+            element(field).type(value);
+
         }
     }
 
     private void notifyScreenChange() {
         StepEventBus.getEventBus().notifyScreenChange();
-    }
-
-    protected ThucydidesFluentAdapter fluent() {
-        return new ThucydidesFluentAdapter(getDriver());
     }
 
 }

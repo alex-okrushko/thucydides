@@ -27,16 +27,16 @@ class TestClassRunnerForParameters extends ThucydidesRunner {
         parameterSetNumber = i;
     }
 
-   @Override
-   protected JUnitStepListener initListenersUsing(final Pages pageFactory) {
-       setStepListener(JUnitStepListener.withOutputDirectory(getConfiguration().getOutputDirectory())
-                                        .and().withPageFactory(pageFactory)
-                                        .and().withParameterSetNumber(parameterSetNumber)
-                                        .and().withParametersTable(parametersTable)
-                                        .and().withTestClass(getTestClass().getJavaClass())
-                                        .and().build());
-       return getStepListener();
-   }
+    @Override
+    protected JUnitStepListener initListenersUsing(final Pages pageFactory) {
+        setStepListener(JUnitStepListener.withOutputDirectory(getConfiguration().getOutputDirectory())
+                .and().withPageFactory(pageFactory)
+                .and().withParameterSetNumber(parameterSetNumber)
+                .and().withParametersTable(parametersTable)
+                .and().withTestClass(getTestClass().getJavaClass())
+                .and().build());
+        return getStepListener();
+    }
 
     @Override
     public Object createTest() throws Exception {
@@ -58,13 +58,14 @@ class TestClassRunnerForParameters extends ThucydidesRunner {
 
     @Override
     protected boolean restartBrowserBeforeTest() {
-        if (isUniqueSession()) {
-            return false;
-        } else {
-            int restartFrequency = getConfiguration().getRestartFrequency();
-            return (restartFrequency > 0) && (parameterSetNumber > 0) && (parameterSetNumber % restartFrequency == 0);
+        if (super.restartBrowserBeforeTest()) {
+            return true;
+        } else if (parameterSetNumber > 0) {
+            return (restartFrequency() > 0) && (parameterSetNumber % restartFrequency() == 0);
         }
+        return false;
     }
+
 
     @Override
     protected String getName() {
@@ -92,4 +93,4 @@ class TestClassRunnerForParameters extends ThucydidesRunner {
         //do not generate reports at example level
     }
 
-    }
+}

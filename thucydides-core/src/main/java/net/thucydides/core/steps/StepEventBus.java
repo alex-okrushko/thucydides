@@ -24,8 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
-import static net.thucydides.core.model.TestResult.SUCCESS;
-
 /**
  * An event bus for Step-related notifications.
  * Use this to integrate Thucydides listeners with testing tools.
@@ -330,6 +328,17 @@ public class StepEventBus {
             } else {
                 stepListener.stepPending();
             }
+        }
+    }
+
+
+    public void assumptionViolated(String message) {
+        testPending();
+        stepDone();
+        getResultTally().logIgnoredTest();
+
+        for(StepListener stepListener : getAllListeners()) {
+            stepListener.assumptionViolated(message);
         }
     }
 

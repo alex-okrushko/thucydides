@@ -6,6 +6,8 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import net.thucydides.core.batches.BatchManager;
 import net.thucydides.core.batches.SystemVariableBasedBatchManager;
+import net.thucydides.core.fixtureservices.ClasspathFixtureProviderService;
+import net.thucydides.core.fixtureservices.FixtureProviderService;
 import net.thucydides.core.issues.IssueTracking;
 import net.thucydides.core.issues.SystemPropertiesIssueTracking;
 import net.thucydides.core.logging.ThucydidesLogging;
@@ -21,9 +23,11 @@ import net.thucydides.core.requirements.ClasspathRequirementsProviderService;
 import net.thucydides.core.requirements.RequirementsProviderService;
 import net.thucydides.core.screenshots.ScreenshotProcessor;
 import net.thucydides.core.screenshots.SingleThreadScreenshotProcessor;
+import net.thucydides.core.statistics.AtomicTestCount;
 import net.thucydides.core.statistics.HibernateTestStatisticsProvider;
 import net.thucydides.core.statistics.Statistics;
 import net.thucydides.core.statistics.StatisticsListener;
+import net.thucydides.core.statistics.TestCount;
 import net.thucydides.core.statistics.TestStatisticsProvider;
 import net.thucydides.core.statistics.dao.HibernateTestOutcomeHistoryDAO;
 import net.thucydides.core.statistics.dao.TestOutcomeHistoryDAO;
@@ -42,10 +46,9 @@ import net.thucydides.core.util.SystemEnvironmentVariables;
 import net.thucydides.core.webdriver.Configuration;
 import net.thucydides.core.webdriver.ElementProxyCreator;
 import net.thucydides.core.webdriver.SystemPropertiesConfiguration;
-import net.thucydides.core.webdriver.ThucydidesElementProxyCreator;
 import net.thucydides.core.webdriver.ThucydidesWebdriverManager;
 import net.thucydides.core.webdriver.WebdriverManager;
-import net.thucydides.core.webdriver.smart.SmartElementProxyCreator;
+import net.thucydides.core.annotations.locators.SmartElementProxyCreator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,10 +84,13 @@ public class ThucydidesModule extends AbstractModule {
         bind(TagProviderService.class).to(ClasspathTagProviderService.class).in(Singleton.class);
         bind(RequirementsProviderService.class).to(ClasspathRequirementsProviderService.class).in(Singleton.class);
         bind(DependencyInjectorService.class).to(ClasspathDependencyInjectorService.class).in(Singleton.class);
+        bind(FixtureProviderService.class).to(ClasspathFixtureProviderService.class).in(Singleton.class);
 
         bind(StepListener.class).annotatedWith(Statistics.class).to(StatisticsListener.class).in(Singleton.class);
         bind(StepListener.class).annotatedWith(ThucydidesLogging.class).to(ConsoleLoggingListener.class).in(Singleton.class);
         bind(ElementProxyCreator.class).to(SmartElementProxyCreator.class).in(Singleton.class);
+
+        bind(TestCount.class).to(AtomicTestCount.class).in(Singleton.class);
     }
 
     @Provides

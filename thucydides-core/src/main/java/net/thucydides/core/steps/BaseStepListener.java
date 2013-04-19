@@ -280,7 +280,11 @@ public class BaseStepListener implements StepListener, StepPublisher {
     }
 
     public void updateCurrentStepTitle(String updatedStepTitle) {
-        getCurrentStep().setDescription(updatedStepTitle);
+        if (currentStepExists()) {
+            getCurrentStep().setDescription(updatedStepTitle);
+        } else {
+            stepStarted(ExecutedStepDescription.withTitle(updatedStepTitle));
+        }
     }
 
     private void setAnnotatedResult(String testMethod) {
@@ -417,7 +421,7 @@ public class BaseStepListener implements StepListener, StepPublisher {
         if (currentGroupStack.isEmpty()) {
             return null;
         } else {
-            return currentGroupStack.peek();
+            return currentGroupStack.peek();// findLastChildIn(currentGroupStack.peek());
         }
     }
 
@@ -498,12 +502,17 @@ public class BaseStepListener implements StepListener, StepPublisher {
         stepPending();
     }
 
+    public void assumptionViolated(String message) {
+        getCurrentStep().testAborted(new PendingStepException(message));
+        stepPending();
+    }
+
     private void currentStepDone() {
         if ((!inFluentStepSequence) && currentStepExists()) {
             TestStep finishedStep = currentStepStack.pop();
             finishedStep.recordDuration();
 
-            if (finishedStep == getCurrentGroup()) {
+            if ((finishedStep == getCurrentGroup())) {
                 finishGroup();
             }
         }

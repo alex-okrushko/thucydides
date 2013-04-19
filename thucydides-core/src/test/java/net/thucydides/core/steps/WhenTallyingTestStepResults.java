@@ -245,6 +245,18 @@ public class WhenTallyingTestStepResults {
     }
 
     @Test
+    public void should_be_able_to_create_a_new_step_when_defining_the_title_if_no_step_exists() {
+
+        BaseStepListener stepListener = new BaseStepListener(FirefoxDriver.class, outputDirectory);
+        net.thucydides.core.model.Story story = net.thucydides.core.model.Story.from(MyStory.class);
+        stepListener.testSuiteStarted(story);
+        stepListener.testStarted("the app should work");
+        stepListener.updateCurrentStepTitle("final title");
+        assertThat(stepListener.getCurrentTestOutcome().getTestSteps().get(0).getDescription() , is("final title"));
+    }
+
+
+    @Test
     public void should_keep_track_of_when_a_test_has_failed() {
         BaseStepListener stepListener = new BaseStepListener(FirefoxDriver.class, outputDirectory);
         stepListener.testSuiteStarted(MyTestCase.class);
