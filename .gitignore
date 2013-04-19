@@ -21,3 +21,5 @@ thucydides-arquillian
 
 *.sublime-project
 *.sublime-workspace
+/.hg
+/.hgignore
