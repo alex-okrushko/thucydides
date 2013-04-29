@@ -13,9 +13,11 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.InjectableValues;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 //import com.google.gson.Gson;
 //import com.google.gson.GsonBuilder;
@@ -29,6 +31,7 @@ import static net.thucydides.core.webdriver.javascript.JavascriptSupport.javascr
 public class JavascriptExecutorFacade {
     private WebDriver driver;
     private ObjectMapper mapper;
+    private InjectableValues inject;
 
     public JavascriptExecutorFacade(final WebDriver driver) {
         this.driver = driver;
@@ -36,6 +39,10 @@ public class JavascriptExecutorFacade {
     
     public JavascriptExecutorFacade withObjectMapper(ObjectMapper mapper){
     	this.mapper = mapper;
+    	return this;
+    }
+    public JavascriptExecutorFacade withInjectableValues(InjectableValues inject){
+    	this.inject = inject;
     	return this;
     }
 
@@ -104,8 +111,12 @@ public class JavascriptExecutorFacade {
     public <T> T executeScriptAndReflectOn(Class<T> classOfT, final String script, final Object... params){
     	String objString = getStringifiedJavaScriptObject(script, params);
     	ObjectMapper mapper = getMapperForClass(classOfT);
+    	ObjectReader reader = mapper.reader(classOfT);
+    	if (inject != null){
+    		reader = reader.with(inject);
+    	}
     	try {
-			return mapper.readValue(objString, classOfT);
+    		return reader.readValue(objString);
 		} catch (JsonParseException e) {
 			throw new WebDriverException(e);
 		} catch (JsonMappingException e) {
@@ -127,8 +138,12 @@ public class JavascriptExecutorFacade {
     	String objString = getStringifiedJavaScriptObject(script, params);
     	
     	ObjectMapper mapper = getMapperForClass(classOfT);
+    	ObjectReader reader = mapper.reader(TypeFactory.defaultInstance().constructCollectionType(List.class, classOfT));
+    	if (inject != null){
+    		reader = reader.with(inject);
+    	}
     	try {
-			return mapper.readValue(objString, TypeFactory.defaultInstance().constructCollectionType(List.class, classOfT));
+			return reader.readValue(objString);
 		} catch (JsonParseException e) {
 			throw new WebDriverException(e);
 		} catch (JsonMappingException e) {
