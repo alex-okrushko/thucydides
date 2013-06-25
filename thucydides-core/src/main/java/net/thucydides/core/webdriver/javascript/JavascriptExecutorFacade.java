@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.List;
 
-import net.thucydides.core.annotations.TypeAdapters;
 import net.thucydides.core.pages.jquery.JQueryEnabledPage;
 import net.thucydides.core.webdriver.WebDriverFacade;
 
@@ -81,23 +80,6 @@ public class JavascriptExecutorFacade {
 		if (mapper == null){
 			mapper = new ObjectMapper();
 		}
-    	for (Field field : clazz.getDeclaredFields()){
-    		if (field.isAnnotationPresent(TypeAdapters.class)){
-    			if (!Module.class.isAssignableFrom(field.getType())){
-    				throw new WebDriverException("TypeAdapter has to be of Module type");
-    			}
-    			field.setAccessible(true);
-    			try {
-    				mapper.registerModule((Module) field.get(clazz.newInstance()));
-				} catch (IllegalArgumentException e) {
-					throw new WebDriverException(e);
-				} catch (IllegalAccessException e) {
-					throw new WebDriverException(e);
-				} catch (InstantiationException e) {
-					throw new WebDriverException(e);
-				}
-    		}
-    	}
     	return mapper;
     }
     /**

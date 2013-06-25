@@ -12,12 +12,18 @@ import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.ie.InternetExplorerDriver;
 import org.openqa.selenium.remote.RemoteWebDriver;
+import org.sikuli.webdriver.SikuliFirefoxDriver;
 
 /**
  * The list of supported web drivers.
  * These are the drivers that support screenshots.
  */
 public enum SupportedWebDriver {
+	
+	/**
+	 * Sikuli Firefox WebDriver driver.
+	 */
+	SIKULI(SikuliFirefoxDriver.class),
     /**
      * Firefox WebDriver driver.
      */

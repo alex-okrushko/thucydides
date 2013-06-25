@@ -241,6 +241,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
     }
 
     @Override
+    @DelayElementLocation
 	public boolean isCurrentlyEnabled() {
         try {
             return getElement().isEnabled();
@@ -538,7 +539,6 @@ public class WebElementFacadeImpl implements WebElementFacade {
         }
 
         try {
-            //return (webElement != null) && (webElement.isDisplayed() || !webElement.isDisplayed());
         	return (getElement() != null) && (getElement().isDisplayed() || !getElement().isDisplayed());
         } catch (NoSuchElementException e) {
             if (e.getCause().getMessage().contains("Element is not usable")) {

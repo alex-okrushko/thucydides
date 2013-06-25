@@ -30,6 +30,7 @@ import org.openqa.selenium.remote.Augmenter;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.safari.SafariDriver;
+import org.sikuli.webdriver.SikuliFirefoxDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -157,6 +158,8 @@ public class WebDriverFactory {
             WebDriver driver;
             if (isARemoteDriver(driverClass) || shouldUseARemoteDriver() || saucelabsUrlIsDefined()) {
                 driver = newRemoteDriver();
+            } else if (isASikuliFirefoxDriver(driverClass)) {
+                driver = new SikuliFirefoxDriver();
             } else if (isAFirefoxDriver(driverClass)) {
                 driver = firefoxDriver();
             } else if (isAnHtmlUnitDriver(driverClass)) {
@@ -491,6 +494,10 @@ public class WebDriverFactory {
         return (RemoteWebDriver.class == driverClass);
     }
 
+    private boolean isASikuliFirefoxDriver(Class<? extends WebDriver> driverClass) {
+        return (SikuliFirefoxDriver.class.isAssignableFrom(driverClass));
+    }
+    
     private boolean isAFirefoxDriver(Class<? extends WebDriver> driverClass) {
         return (FirefoxDriver.class.isAssignableFrom(driverClass));
     }

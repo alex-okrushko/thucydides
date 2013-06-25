@@ -44,7 +44,7 @@ public class SmartElementHandler implements InvocationHandler{
 	public Object invoke(Object object, Method method, Object[] objects) throws Throwable {
     	try {
     		Constructor<? extends WebElementFacade> constructor = null;
-	    	if (method.isAnnotationPresent(DelayElementLocation.class)) {
+	    	if (method.isAnnotationPresent(DelayElementLocation.class) || method.getName().equals("toString")) {
 	    		//first try to get the proper constructor from the implementer class
 	    		try{
 	    			constructor = implementerClass.getConstructor(WebDriver.class, ElementLocator.class, long.class);

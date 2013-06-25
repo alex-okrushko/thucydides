@@ -39,25 +39,16 @@ public abstract class By extends org.openqa.selenium.By {
 
         @Override
         public WebElement findElement(SearchContext context) {
-            WebElement element;
             try {
-                element = (new WebDriverWait((WebDriver) context, 1))
-                        .until(new ExpectedCondition<WebElement>() {
-                            public WebElement apply(WebDriver driver) {
-                                try {
-                                    return (WebElement) ((JavascriptExecutor) driver)
-                                            .executeScript("return AutoTest.getElement(arguments[0]);", scLocator);
-                                } catch (WebDriverException e) {
-                                    return null;
-                                }
-                            }
-                        });
-            } catch (TimeoutException e) {
-                throw new NoSuchElementException("Cannot locate an element using "
-                        + toString());
-
+	            return (WebElement) ((JavascriptExecutor) context)
+	                    .executeScript("return isc.AutoTest.getElement(arguments[0]);", scLocator);
+            } catch (WebDriverException e){
+            	if ((Boolean) ((JavascriptExecutor) context)
+            	.executeScript("return (typeof isc == 'undefined')")){
+            		throw new RuntimeException("Not a SmartGWT page. Cannot locate element using SmartGTW locator " + toString());
+            	}
             }
-            return element;
+            throw new NoSuchElementException("Cannot locate element using " + toString());
         }
 
         @Override

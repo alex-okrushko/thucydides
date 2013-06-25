@@ -33,7 +33,8 @@ public interface WebElementFacade extends WebElement, WrapsElement, Locatable{
 	public abstract String getAttribute(String name);
 
 	public abstract List<WebElementFacade> thenFindAll(By selector);
-
+	
+	@DelayElementLocation
 	public abstract long getTimeoutInMilliseconds();
 
 	public abstract WebElementFacade withTimeoutOf(int timeout,
@@ -66,7 +67,8 @@ public interface WebElementFacade extends WebElement, WrapsElement, Locatable{
 	 */
 	@DelayElementLocation
 	public abstract boolean isCurrentlyVisible();
-
+	
+	@DelayElementLocation
 	public abstract boolean isCurrentlyEnabled();
 
 	/**
@@ -194,7 +196,8 @@ public interface WebElementFacade extends WebElement, WrapsElement, Locatable{
 	public abstract WebElementFacade waitUntilVisible();
 
 	public abstract WebElementFacade waitUntilPresent();
-
+	
+	@DelayElementLocation
 	public abstract Wait<WebDriver> waitForCondition();
 	
 	@DelayElementLocation
