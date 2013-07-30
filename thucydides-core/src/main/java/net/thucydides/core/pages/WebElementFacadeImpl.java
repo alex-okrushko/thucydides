@@ -259,7 +259,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
     @Override
 	public void shouldBeVisible() {
         if (!isVisible()) {
-            throw new AssertionError("Element should be visible");
+            throw new AssertionError("Element '"+ toString() + "' should be visible");
         }
     }
 
@@ -400,7 +400,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
 	public void shouldBeEnabled() {
         if (!isEnabled()) {
             String errorMessage = String.format(
-                    "Field '%s' should be enabled", getElement());
+                    "Field '%s' should be enabled", toString());
             throw new AssertionError(errorMessage);
         }
     }
@@ -414,7 +414,7 @@ public class WebElementFacadeImpl implements WebElementFacade {
 	public void shouldNotBeEnabled() {
         if (isEnabled()) {
             String errorMessage = String.format(
-                    "Field '%s' should not be enabled", getElement());
+                    "Field '%s' should not be enabled", toString());
             throw new AssertionError(errorMessage);
         }
     }

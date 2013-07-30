@@ -1,7 +1,6 @@
 package net.thucydides.core.webdriver.javascript;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.List;
 
 import net.thucydides.core.pages.jquery.JQueryEnabledPage;
@@ -14,7 +13,6 @@ import org.openqa.selenium.WebDriverException;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.InjectableValues;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.type.TypeFactory;
@@ -92,6 +90,8 @@ public class JavascriptExecutorFacade {
      */
     public <T> T executeScriptAndReflectOn(Class<T> classOfT, final String script, final Object... params){
     	String objString = getStringifiedJavaScriptObject(script, params);
+    	if (objString == null)
+    		return null;
     	ObjectMapper mapper = getMapperForClass(classOfT);
     	ObjectReader reader = mapper.reader(classOfT);
     	if (inject != null){
